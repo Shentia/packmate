@@ -43,9 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showCreateListDialog() {
@@ -54,57 +54,62 @@ class _HomeScreenState extends State<HomeScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create New Packing List'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'List Name',
-                hintText: 'Enter a name for your packing list',
+      builder:
+          (context) => Material(
+            type: MaterialType.transparency,
+            child: AlertDialog(
+              title: const Text('Create New Packing List'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'List Name',
+                      hintText: 'Enter a name for your packing list',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Description (Optional)',
+                      hintText: 'Enter a description',
+                    ),
+                    maxLines: 2,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (Optional)',
-                hintText: 'Enter a description',
-              ),
-              maxLines: 2,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (nameController.text.trim().isEmpty) {
-                return;
-              }
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (nameController.text.trim().isEmpty) {
+                      return;
+                    }
 
-              final newList = PackingList(
-                id: const Uuid().v4(),
-                name: nameController.text.trim(),
-                createdAt: DateTime.now(),
-                items: [],
-                description: descriptionController.text.trim().isNotEmpty 
-                    ? descriptionController.text.trim() 
-                    : null,
-              );
+                    final newList = PackingList(
+                      id: const Uuid().v4(),
+                      name: nameController.text.trim(),
+                      createdAt: DateTime.now(),
+                      items: [],
+                      description:
+                          descriptionController.text.trim().isNotEmpty
+                              ? descriptionController.text.trim()
+                              : null,
+                    );
 
-              _saveNewList(newList);
-              Navigator.pop(context);
-            },
-            child: const Text('Create'),
+                    _saveNewList(newList);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Create'),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
     );
   }
 
@@ -129,57 +134,57 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Packing List'),
-        centerTitle: true,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _packingLists.isEmpty
+      appBar: AppBar(title: const Text('Packing List'), centerTitle: true),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _packingLists.isEmpty
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'No packing lists yet',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _showCreateListDialog,
-                        child: const Text('Create Your First List'),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: _packingLists.length,
-                  itemBuilder: (context, index) {
-                    final list = _packingLists[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 4.0),
-                      child: PackingListCard(
-                        packingList: list,
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ListDetailsScreen(listId: list.id),
-                            ),
-                          );
-                          _loadPackingLists(); // Refresh after returning
-                        },
-                        onDelete: () => _deleteList(list.id),
-                      ),
-                    );
-                  },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'No packing lists yet',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _showCreateListDialog,
+                      child: const Text('Create Your First List'),
+                    ),
+                  ],
                 ),
-      floatingActionButton: _packingLists.isEmpty
-          ? null
-          : FloatingActionButton(
-              onPressed: _showCreateListDialog,
-              child: const Icon(Icons.add),
-            ),
+              )
+              : ListView.builder(
+                itemCount: _packingLists.length,
+                itemBuilder: (context, index) {
+                  final list = _packingLists[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: PackingListCard(
+                      packingList: list,
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => ListDetailsScreen(listId: list.id),
+                          ),
+                        );
+                        _loadPackingLists(); // Refresh after returning
+                      },
+                      onDelete: () => _deleteList(list.id),
+                    ),
+                  );
+                },
+              ),
+      floatingActionButton:
+          _packingLists.isEmpty
+              ? null
+              : FloatingActionButton(
+                onPressed: _showCreateListDialog,
+                child: const Icon(Icons.add),
+              ),
     );
   }
 }

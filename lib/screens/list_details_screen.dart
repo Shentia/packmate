@@ -4,7 +4,6 @@ import '../models/packing_item.dart';
 import '../models/packing_list.dart';
 import '../services/storage_service.dart';
 import '../widgets/packing_item_tile.dart';
-import '../widgets/qr_code_dialog.dart';
 
 class ListDetailsScreen extends StatefulWidget {
   final String listId;
@@ -48,105 +47,124 @@ class _ListDetailsScreenState extends State<ListDetailsScreen> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showAddItemDialog() {
     final TextEditingController nameController = TextEditingController();
     final TextEditingController notesController = TextEditingController();
-    final TextEditingController quantityController = TextEditingController(text: '1');
+    final TextEditingController quantityController = TextEditingController(
+      text: '1',
+    );
     String? selectedCategory;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Item'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Item Name',
-                  hintText: 'Enter item name',
+      builder:
+          (context) => Material(
+            type: MaterialType.transparency,
+            child: AlertDialog(
+              title: const Text('Add Item'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Item Name',
+                        hintText: 'Enter item name',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: quantityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity',
+                        hintText: 'Enter quantity',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Category (Optional)',
+                      ),
+                      value: selectedCategory,
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Clothing',
+                          child: Text('Clothing'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Toiletries',
+                          child: Text('Toiletries'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Electronics',
+                          child: Text('Electronics'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Documents',
+                          child: Text('Documents'),
+                        ),
+                        DropdownMenuItem(value: 'Other', child: Text('Other')),
+                      ],
+                      onChanged: (value) {
+                        selectedCategory = value;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: notesController,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes (Optional)',
+                        hintText: 'Enter notes',
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: quantityController,
-                decoration: const InputDecoration(
-                  labelText: 'Quantity',
-                  hintText: 'Enter quantity',
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Category (Optional)',
-                ),
-                value: selectedCategory,
-                items: const [
-                  DropdownMenuItem(value: 'Clothing', child: Text('Clothing')),
-                  DropdownMenuItem(value: 'Toiletries', child: Text('Toiletries')),
-                  DropdownMenuItem(value: 'Electronics', child: Text('Electronics')),
-                  DropdownMenuItem(value: 'Documents', child: Text('Documents')),
-                  DropdownMenuItem(value: 'Other', child: Text('Other')),
-                ],
-                onChanged: (value) {
-                  selectedCategory = value;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Notes (Optional)',
-                  hintText: 'Enter notes',
-                ),
-                maxLines: 2,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (nameController.text.trim().isEmpty) {
-                return;
-              }
+                TextButton(
+                  onPressed: () {
+                    if (nameController.text.trim().isEmpty) {
+                      return;
+                    }
 
-              int? quantity;
-              try {
-                quantity = int.parse(quantityController.text.trim());
-              } catch (_) {
-                quantity = 1;
-              }
+                    int? quantity;
+                    try {
+                      quantity = int.parse(quantityController.text.trim());
+                    } catch (_) {
+                      quantity = 1;
+                    }
 
-              final newItem = PackingItem(
-                id: const Uuid().v4(),
-                name: nameController.text.trim(),
-                category: selectedCategory,
-                quantity: quantity,
-                notes: notesController.text.trim().isNotEmpty 
-                    ? notesController.text.trim() 
-                    : null,
-              );
+                    final newItem = PackingItem(
+                      id: const Uuid().v4(),
+                      name: nameController.text.trim(),
+                      category: selectedCategory,
+                      quantity: quantity,
+                      notes:
+                          notesController.text.trim().isNotEmpty
+                              ? notesController.text.trim()
+                              : null,
+                    );
 
-              _addItem(newItem);
-              Navigator.pop(context);
-            },
-            child: const Text('Add'),
+                    _addItem(newItem);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
     );
   }
 
@@ -190,15 +208,6 @@ class _ListDetailsScreenState extends State<ListDetailsScreen> {
     }
   }
 
-  void _showQRCodeDialog() {
-    if (_packingList == null) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => QRCodeDialog(packingList: _packingList!),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -206,11 +215,6 @@ class _ListDetailsScreenState extends State<ListDetailsScreen> {
         title: Text(_packingList?.name ?? 'Packing List Details'),
         actions: [
           if (_packingList != null) ...[
-            IconButton(
-              icon: const Icon(Icons.qr_code),
-              tooltip: 'Show QR Code',
-              onPressed: _showQRCodeDialog,
-            ),
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
               child: Center(
@@ -226,44 +230,46 @@ class _ListDetailsScreenState extends State<ListDetailsScreen> {
           ],
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _packingList == null
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _packingList == null
               ? const Center(child: Text('List not found'))
               : _packingList!.items.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'No items in this list yet',
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _showAddItemDialog,
-                            child: const Text('Add Your First Item'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _packingList!.items.length,
-                      itemBuilder: (context, index) {
-                        final item = _packingList!.items[index];
-                        return PackingItemTile(
-                          item: item,
-                          onToggle: _toggleItemStatus,
-                          onDelete: _deleteItem,
-                        );
-                      },
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'No items in this list yet',
+                      style: TextStyle(fontSize: 18),
                     ),
-      floatingActionButton: _packingList == null || _packingList!.items.isEmpty
-          ? null
-          : FloatingActionButton(
-              onPressed: _showAddItemDialog,
-              child: const Icon(Icons.add),
-            ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _showAddItemDialog,
+                      child: const Text('Add Your First Item'),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                itemCount: _packingList!.items.length,
+                itemBuilder: (context, index) {
+                  final item = _packingList!.items[index];
+                  return PackingItemTile(
+                    item: item,
+                    onToggle: _toggleItemStatus,
+                    onDelete: _deleteItem,
+                  );
+                },
+              ),
+      floatingActionButton:
+          _packingList == null || _packingList!.items.isEmpty
+              ? null
+              : FloatingActionButton(
+                onPressed: _showAddItemDialog,
+                child: const Icon(Icons.add),
+              ),
     );
   }
 }

@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'screens/packing_lists_screen.dart';
 import 'services/theme_service.dart';
+import 'services/liquid_glass_theme.dart';
+import 'widgets/travel_background.dart';
 
 void main() async {
   // Ensure Flutter is initialized
@@ -25,7 +27,6 @@ class PackingListApp extends StatefulWidget {
 
 class _PackingListAppState extends State<PackingListApp> {
   late Brightness _currentTheme;
-  final ThemeService _themeService = ThemeService();
 
   @override
   void initState() {
@@ -41,19 +42,15 @@ class _PackingListAppState extends State<PackingListApp> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _currentTheme == Brightness.dark;
+
     return CupertinoApp(
-      title: 'Packing List',
+      title: 'PackMate',
       debugShowCheckedModeBanner: false,
-      theme: CupertinoThemeData(
-        primaryColor: CupertinoColors.systemBlue,
-        brightness: _currentTheme,
-        scaffoldBackgroundColor: _currentTheme == Brightness.light 
-            ? CupertinoColors.systemGroupedBackground 
-            : CupertinoColors.systemBackground.darkColor,
-        barBackgroundColor: _currentTheme == Brightness.light 
-            ? CupertinoColors.systemBackground 
-            : CupertinoColors.systemBackground.darkColor,
-      ),
+      theme: LiquidGlassTheme.cupertinoTheme(isDark),
+      builder: (context, child) {
+        return TravelBackgroundWidget(isDark: isDark, child: child!);
+      },
       home: PackingListsScreen(
         currentTheme: _currentTheme,
         onThemeChanged: _updateTheme,

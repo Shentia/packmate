@@ -17,7 +17,7 @@ class PackingListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final progress = packingList.progress;
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
@@ -44,7 +44,8 @@ class PackingListCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (packingList.description != null && packingList.description!.isNotEmpty)
+              if (packingList.description != null &&
+                  packingList.description!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
                   child: Text(
@@ -75,9 +76,7 @@ class PackingListCard extends StatelessWidget {
                 value: progress,
                 backgroundColor: theme.colorScheme.surfaceVariant,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  progress == 1.0 
-                      ? Colors.green 
-                      : theme.colorScheme.primary,
+                  progress == 1.0 ? Colors.green : theme.colorScheme.primary,
                 ),
               ),
               if (packingList.tripDate != null)

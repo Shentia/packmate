@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/packing_item.dart';
+import '../services/liquid_glass_theme.dart';
 
 class PackingItemTile extends StatelessWidget {
   final PackingItem item;
@@ -16,7 +17,7 @@ class PackingItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Padding(
@@ -71,31 +72,27 @@ class PackingItemTile extends StatelessWidget {
     }
 
     final List<Widget> subtitleParts = [];
-    
+
     if (item.category != null) {
+      // Determine if we're in dark mode
+      final isDark = theme.brightness == Brightness.dark;
+
       subtitleParts.add(
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            item.category!,
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.onSecondaryContainer,
-            ),
-          ),
+        LiquidGlassTheme.enhancedCategoryBadge(
+          category: item.category!,
+          isDark: isDark,
+          fontSize: 11,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          borderRadius: 6,
         ),
       );
     }
-    
+
     if (item.notes != null) {
       if (subtitleParts.isNotEmpty) {
         subtitleParts.add(const SizedBox(width: 8));
       }
-      
+
       subtitleParts.add(
         Expanded(
           child: Text(
@@ -107,12 +104,10 @@ class PackingItemTile extends StatelessWidget {
         ),
       );
     }
-    
+
     return Padding(
       padding: const EdgeInsets.only(top: 4.0),
-      child: Row(
-        children: subtitleParts,
-      ),
+      child: Row(children: subtitleParts),
     );
   }
 }
