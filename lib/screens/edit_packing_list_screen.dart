@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:ui';
 import '../models/packing_list.dart';
 import '../models/packing_item.dart';
+import '../services/storage_service.dart';
 import '../services/liquid_glass_theme.dart';
 import '../widgets/glass_widget.dart';
 
@@ -22,12 +23,14 @@ class EditPackingListScreen extends StatefulWidget {
 }
 
 class _EditPackingListScreenState extends State<EditPackingListScreen> {
+  final StorageService _storageService = StorageService();
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   String? _selectedCategory;
   List<PackingItem> _items = [];
   List<TextEditingController> _itemControllers = [];
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -431,15 +434,18 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
       ),
       child: CupertinoButton(
         padding: EdgeInsets.zero,
-        onPressed: _savePackingList,
-        child: const Text(
-          'Save Packing List',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        onPressed: _isSaving ? null : _savePackingList,
+        child:
+            _isSaving
+                ? const CupertinoActivityIndicator(color: Colors.white)
+                : const Text(
+                  'Save Packing List',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
       ),
     );
   }
@@ -464,8 +470,19 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
     });
   }
 
-  void _savePackingList() {
-    if (_formKey.currentState!.validate()) {
+  Future<void> _savePackingList() async {
+    if (_isSaving) return; // Prevent double-tap saves
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      if (!_formKey.currentState!.validate()) {
+        print('Form validation failed');
+        return;
+      }
+
       if (_selectedCategory == null) {
         _showErrorDialog('Please select a category');
         return;
@@ -476,6 +493,9 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
         return;
       }
 
+      print('Form validated, proceeding with save...');
+      print('Number of items: ${_items.length}');
+
       // Update item names from controllers
       for (int i = 0; i < _items.length; i++) {
         _items[i] = _items[i].copyWith(name: _itemControllers[i].text.trim());
@@ -483,6 +503,12 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
 
       // Remove empty items
       _items.removeWhere((item) => item.name.isEmpty);
+
+      print('Number of valid items after filtering: ${_items.length}');
+
+      for (int i = 0; i < _items.length; i++) {
+        print('Item $i: ${_items[i].name} (packed: ${_items[i].isPacked})');
+      }
 
       final packingList = PackingList(
         id:
@@ -495,7 +521,26 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
         createdAt: widget.packingList?.createdAt ?? DateTime.now(),
       );
 
-      Navigator.pop(context, packingList);
+      print(
+        'Created packing list: ${packingList.name} with ${packingList.items.length} items',
+      );
+
+      print('Attempting to save packing list...');
+      await _storageService.savePackingList(packingList);
+      print('Packing list saved successfully');
+
+      if (mounted) {
+        Navigator.pop(context, true); // Return true to indicate success
+      }
+    } catch (e) {
+      print('Error saving packing list: $e');
+      _showErrorDialog('Failed to save packing list: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 

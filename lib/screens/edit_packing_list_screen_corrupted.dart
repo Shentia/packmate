@@ -95,8 +95,19 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
   }
 
   Future<void> _savePackingList() async {
+    print('=== SAVE PACKING LIST STARTED ===');
+    print('Form validation: ${_formKey.currentState?.validate()}');
+
     if (!_formKey.currentState!.validate()) {
+      print('Form validation failed, aborting save');
       return;
+    }
+
+    print('Number of item fields: ${_itemFields.length}');
+    for (int i = 0; i < _itemFields.length; i++) {
+      print(
+        'Field $i: "${_itemFields[i].controller.text}" (packed: ${_itemFields[i].isPacked})',
+      );
     }
 
     // Create list of items
@@ -111,6 +122,13 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
               ),
             )
             .toList();
+
+    print('Filtered items count: ${items.length}');
+    for (int i = 0; i < items.length; i++) {
+      print(
+        'Item $i: "${items[i].name}" (ID: ${items[i].id}, packed: ${items[i].isPacked})',
+      );
+    }
 
     // Create or update packing list
     final packingList = PackingList(
@@ -131,14 +149,37 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
               : null,
     );
 
+    print('Packing list created:');
+    print('  ID: ${packingList.id}');
+    print('  Name: ${packingList.name}');
+    print('  Category: ${packingList.category}');
+    print('  Description: ${packingList.description}');
+    print('  Items count: ${packingList.items.length}');
+
     try {
+      print('Calling StorageService.savePackingList...');
       await _storageService.savePackingList(packingList);
+      print('StorageService.savePackingList completed successfully');
+
+      // Verify it was saved by reading back
+      print('Verifying save by reading back all lists...');
+      final allLists = await _storageService.getPackingLists();
+      print('Total lists after save: ${allLists.length}');
+      for (var list in allLists) {
+        print('  List: ${list.name} (${list.items.length} items)');
+      }
+
       if (mounted) {
+        print('Navigating back with success result');
         Navigator.pop(context, true); // Return true to indicate success
       }
-    } catch (e) {
-      _showErrorAlert('Failed to save packing list');
+    } catch (e, stackTrace) {
+      print('ERROR saving packing list: $e');
+      print('Stack trace: $stackTrace');
+      _showErrorAlert('Failed to save packing list: $e');
     }
+
+    print('=== SAVE PACKING LIST COMPLETED ===');
   }
 
   void _showErrorAlert(String message) {
@@ -225,7 +266,7 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = CupertinoTheme.of(context).brightness == Brightness.dark;
-    
+
     return CupertinoPageScaffold(
       backgroundColor: Colors.transparent,
       navigationBar: CupertinoNavigationBar(
@@ -237,9 +278,10 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isDark 
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.white.withOpacity(0.2),
+                color:
+                    isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: Colors.white.withOpacity(0.3),
@@ -289,7 +331,7 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 10),
-                
+
                 // Title Section with Glass Container
                 _buildSection(
                   isDark: isDark,
@@ -311,15 +353,15 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
                           return null;
                         },
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       _buildLabel('Category', false),
                       const SizedBox(height: 8),
                       _buildCategorySelector(isDark),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       _buildLabel('Description', false),
                       const SizedBox(height: 8),
                       _buildGlassTextField(
@@ -354,7 +396,7 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
 
                 // Save Button
                 _buildSaveButton(isDark),
-                
+
                 const SizedBox(height: 20),
               ],
             ),
@@ -375,9 +417,10 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark 
-                  ? Colors.white.withOpacity(0.03)
-                  : Colors.white.withOpacity(0.2),
+                color:
+                    isDark
+                        ? Colors.white.withOpacity(0.03)
+                        : Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: Colors.white.withOpacity(0.15),
@@ -394,54 +437,77 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
                       height: 28,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: _itemFields[index].isPacked
-                          ? LinearGradient(
-                              colors: [
-                                LiquidGlassTheme.accentTeal,
-                                LiquidGlassTheme.accentTeal.withOpacity(0.8),
-                              ],
-                            )
-                          : null,
+                        gradient:
+                            _itemFields[index].isPacked
+                                ? LinearGradient(
+                                  colors: [
+                                    LiquidGlassTheme.accentTeal,
+                                    LiquidGlassTheme.accentTeal.withOpacity(
+                                      0.8,
+                                    ),
+                                  ],
+                                )
+                                : null,
                         border: Border.all(
-                          color: _itemFields[index].isPacked
-                              ? LiquidGlassTheme.accentTeal
-                              : (isDark ? Colors.white40 : Colors.black26),
+                          color:
+                              _itemFields[index].isPacked
+                                  ? LiquidGlassTheme.accentTeal
+                                  : (isDark
+                                      ? Colors.white.withOpacity(0.4)
+                                      : Colors.black26),
                           width: 2,
                         ),
                       ),
-                      child: _itemFields[index].isPacked
-                          ? const Icon(
-                              CupertinoIcons.check_mark,
-                              size: 16,
-                              color: Colors.white,
-                            )
-                          : null,
+                      child:
+                          _itemFields[index].isPacked
+                              ? const Icon(
+                                CupertinoIcons.check_mark,
+                                size: 16,
+                                color: Colors.white,
+                              )
+                              : null,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  
-                  // Text Field with glass styling
+
+                  // Text Field with proper form validation
                   Expanded(
-                    child: CupertinoTextField(
-                      controller: _itemFields[index].controller,
-                      placeholder: 'Enter item name',
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black87,
-                        fontSize: 16,
-                        decoration: _itemFields[index].isPacked 
-                          ? TextDecoration.lineThrough 
-                          : null,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: TextFormField(
+                        controller: _itemFields[index].controller,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                          fontSize: 16,
+                          decoration:
+                              _itemFields[index].isPacked
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Enter item name',
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                          ),
+                        ),
+                        validator: (value) {
+                          // Only require first item to have content
+                          if (index == 0 &&
+                              (value == null || value.trim().isEmpty)) {
+                            return 'Please enter at least one item';
+                          }
+                          return null;
+                        },
                       ),
-                      placeholderStyle: TextStyle(
-                        color: isDark ? Colors.white60 : Colors.black54,
-                      ),
-                      decoration: const BoxDecoration(),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 12),
-                  
+
                   // Delete button
                   GestureDetector(
                     onTap: () => _removeItemField(index),
@@ -462,39 +528,6 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
               ),
             ),
           ),
-        ),
-      );
-    });
-  }
-                controller: _itemFields[index].controller,
-                placeholder: 'Enter item name',
-                validator: (value) {
-                  if (index == 0 && (value == null || value.trim().isEmpty)) {
-                    return 'Please enter at least one item';
-                  }
-                  return null;
-                },
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey6,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-              ),
-            ),
-
-            // Delete Button
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () => _removeItemField(index),
-              child: const Icon(
-                CupertinoIcons.delete,
-                color: CupertinoColors.systemRed,
-              ),
-            ),
-          ],
         ),
       );
     });
@@ -527,11 +560,7 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 18,
-                ),
+                child: Icon(icon, color: Colors.white, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -565,10 +594,7 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
         ),
         children: [
           if (isRequired)
-            const TextSpan(
-              text: ' *',
-              style: TextStyle(color: Colors.red),
-            ),
+            const TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
         ],
       ),
     );
@@ -587,28 +613,34 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark 
-              ? Colors.white.withOpacity(0.05)
-              : Colors.white.withOpacity(0.3),
+            color:
+                isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.white.withOpacity(0.3),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 1,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
           ),
-          child: CupertinoTextFormFieldRow(
-            controller: controller,
-            placeholder: placeholder,
-            maxLines: maxLines,
-            validator: validator,
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black87,
-              fontSize: 16,
-            ),
-            decoration: const BoxDecoration(),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            placeholderStyle: TextStyle(
-              color: isDark ? Colors.white60 : Colors.black54,
+          child: Material(
+            color: Colors.transparent,
+            child: TextFormField(
+              controller: controller,
+              maxLines: maxLines,
+              validator: validator,
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontSize: 16,
+              ),
+              decoration: InputDecoration(
+                hintText: placeholder,
+                hintStyle: TextStyle(
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
             ),
           ),
         ),
@@ -626,9 +658,10 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: isDark 
-                ? Colors.white.withOpacity(0.05)
-                : Colors.white.withOpacity(0.3),
+              color:
+                  isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.white.withOpacity(0.3),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: Colors.white.withOpacity(0.2),
@@ -646,7 +679,10 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
                           category: _categoryController.text,
                           isDark: isDark,
                           fontSize: 12,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           borderRadius: 6,
                         ),
                         const SizedBox(width: 12),
@@ -657,9 +693,10 @@ class _EditPackingListScreenState extends State<EditPackingListScreen> {
                               ? 'Select a category'
                               : _categoryController.text,
                           style: TextStyle(
-                            color: _categoryController.text.isEmpty
-                                ? (isDark ? Colors.white60 : Colors.black54)
-                                : (isDark ? Colors.white : Colors.black87),
+                            color:
+                                _categoryController.text.isEmpty
+                                    ? (isDark ? Colors.white60 : Colors.black54)
+                                    : (isDark ? Colors.white : Colors.black87),
                             fontSize: 16,
                           ),
                         ),
